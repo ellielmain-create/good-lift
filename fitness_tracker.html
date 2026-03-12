@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lift">
+<meta name="theme-color" content="#0a0a0f">
+<title>Lift — Strength Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0a0f;
+    --bg2:      #12121a;
+    --bg3:      #1a1a26;
+    --card:     #16161f;
+    --border:   #2a2a3a;
+    --accent:   #e8ff47;
+    --accent2:  #ff4d6d;
+    --blue:     #4d9fff;
+    --text:     #f0f0f5;
+    --muted:    #6b6b85;
+    --success:  #4ade80;
+    --warn:     #fbbf24;
+    --radius:   16px;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body:    'DM Sans', sans-serif;
+    --font-mono:    'DM Mono', monospace;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* ── App Shell ───────────────────────────── */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Views ───────────────────────────────── */
+  .view {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(80px + var(--safe-bottom));
+  }
+  .view.active { display: block; }
+  .view::-webkit-scrollbar { display: none; }
+
+  /* ── Nav Bar ─────────────────────────────── */
+  #nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: rgba(18,18,26,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: var(--safe-bottom);
+    z-index: 100;
+  }
+
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0 8px;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: color 0.2s;
+    position: relative;
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn .pip {
+    position: absolute;
+    top: 6px;
+    right: calc(50% - 18px);
+    width: 7px; height: 7px;
+    background: var(--accent2);
+    border-radius: 50%;
+    display: none;
+  }
+  .nav-btn .pip.show { display: block; }
+
+  /* ── Page Header ─────────────────────────── */
+  .page-header {
+    padding: 52px 20px 16px;
+    position: relative;
+  }
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 48px;
+    letter-spacing: 1px;
+    line-height: 1;
+    color: var(--text);
+  }
+  .page-title span { color: var(--accent); }
+  .page-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 400;
+  }
+
+  /* ── Cards ───────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 0 16px 12px;
+  }
+  .card-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .card-value {
+    font-family: var(--font-display);
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .card-value.accent { color: var(--accent); }
+  .card-value.success { color: var(--success); }
+
+  /* ── Stat Grid ───────────────────────────── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 16px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .stat-num {
+    font-family: var(--font-display);
+    font-size: 32px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+    font-weight: 500;
+  }
+
+  /* ── Section Title ───────────────────────── */
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 20px 8px;
+  }
+
+  /* ── Exercise Rows ───────────────────────── */
+  .ex-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    margin: 0 16px 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    -webkit-user-select: none;
+  }
+  .ex-row:active { background: var(--bg3); }
+  .ex-row.has-increase { border-color: var(--success); }
+  .ex-row.has-almost   { border-color: var(--warn); }
+
+  .ex-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .ex-info { flex: 1; min-width: 0; }
+  .ex-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ex-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .ex-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .badge-increase { background: rgba(74,222,128,0.15); color: var(--success); }
+  .badge-almost   { background: rgba(251,191,36,0.15);  color: var(--warn); }
+  .badge-maintain { background: rgba(107,107,133,0.15); color: var(--muted); }
+  .badge-new      { background: rgba(77,159,255,0.15);  color: var(--blue); }
+
+  /* ── Log Form ────────────────────────────── */
+  .form-group {
+    padding: 0 16px;
+    margin-bottom: 14px;
+  }
+  .form-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .form-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--muted); font-weight: 400; }
+
+  /* Custom select wrapper */
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '▾';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+    font-size: 14px;
+  }
+  select.form-input { padding-right: 40px; cursor: pointer; }
+  select.form-input option { background: var(--bg2); }
+
+  /* Number input row */
+  .num-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    padding: 0 16px;
+    margin-bottom: 14px;
+  }
+  .num-group label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .num-control {
+    display: flex;
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .num-btn {
+    width: 36px; height: 48px;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .num-btn:active { background: rgba(232,255,71,0.1); }
+  .num-val {
+    flex: 1;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    background: none;
+    border: none;
+    outline: none;
+    -webkit-appearance: none;
+    padding: 0;
+  }
+
+  /* Toggle row YES/NO */
+  .toggle-row {
+    display: flex;
+    gap: 10px;
+    padding: 0 16px;
+    margin-bottom: 14px;
+  }
+  .toggle-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .toggle-btn.selected-yes {
+    background: rgba(74,222,128,0.12);
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .toggle-btn.selected-no {
+    background: rgba(255,77,109,0.12);
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  /* ── Advice Banner ───────────────────────── */
+  .advice-banner {
+    margin: 0 16px 14px;
+    padding: 14px 16px;
+    border-radius: var(--radius);
+    border: 1px solid;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+    display: none;
+  }
+  .advice-banner.show { display: block; }
+  .advice-banner.increase {
+    background: rgba(74,222,128,0.08);
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .advice-banner.almost {
+    background: rgba(251,191,36,0.08);
+    border-color: var(--warn);
+    color: var(--warn);
+  }
+  .advice-banner.maintain {
+    background: rgba(107,107,133,0.08);
+    border-color: var(--border);
+    color: var(--muted);
+  }
+  .advice-banner strong { display: block; font-size: 15px; margin-bottom: 3px; }
+
+  /* ── Primary Button ──────────────────────── */
+  .btn-primary {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 0 16px 16px;
+    padding: 18px;
+    background: var(--accent);
+    color: #0a0a0f;
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 1.5px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    text-align: center;
+  }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+  .btn-secondary {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 0 16px 16px;
+    padding: 16px;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .btn-secondary:active { background: var(--bg3); }
+
+  /* ── History Items ───────────────────────── */
+  .hist-day {
+    padding: 4px 20px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .hist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    margin: 0 16px 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .hist-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .hist-dot.success { background: var(--success); }
+  .hist-info { flex: 1; }
+  .hist-name { font-size: 14px; font-weight: 600; }
+  .hist-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .hist-weight {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .hist-delete {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 4px;
+    font-size: 16px;
+    line-height: 1;
+    border-radius: 8px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .hist-delete:active { color: var(--accent2); background: rgba(255,77,109,0.1); }
+
+  /* ── Progress View ───────────────────────── */
+  .prog-ex-card {
+    margin: 0 16px 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .prog-ex-card.expanded { border-color: var(--accent); }
+  .prog-ex-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .prog-ex-info { flex: 1; min-width: 0; }
+  .prog-ex-name { font-size: 14px; font-weight: 600; }
+  .prog-ex-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .prog-ex-right { text-align: right; flex-shrink: 0; }
+  .prog-weight {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .prog-streak { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .prog-detail {
+    display: none;
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .prog-ex-card.expanded .prog-detail { display: block; }
+
+  .prog-stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .prog-stat {
+    background: var(--bg3);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .prog-stat-val {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .prog-stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .prog-status-pill {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* ── History chart bar ───────────────────── */
+  .mini-chart {
+    margin-top: 14px;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 48px;
+  }
+  .mini-bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+    background: var(--bg3);
+    min-height: 4px;
+    transition: background 0.2s;
+    position: relative;
+  }
+  .mini-bar.current { background: var(--accent); }
+  .mini-bar-label {
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* ── Toast ───────────────────────────────── */
+  #toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--accent);
+    color: #0a0a0f;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+  }
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Modal ───────────────────────────────── */
+  #modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: flex-end;
+    backdrop-filter: blur(4px);
+  }
+  #modal-overlay.show { display: flex; }
+  #modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 20px calc(20px + var(--safe-bottom));
+    width: 100%;
+    max-height: 80dvh;
+    overflow-y: auto;
+    animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .modal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .modal-row:last-child { border-bottom: none; }
+  .modal-row-label { color: var(--muted); font-size: 12px; }
+  .modal-row-val { font-weight: 600; font-family: var(--font-mono); }
+
+  /* ── Install Banner ──────────────────────── */
+  #install-banner {
+    display: none;
+    margin: 12px 16px 0;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(232,255,71,0.08), rgba(77,159,255,0.08));
+    border: 1px solid rgba(232,255,71,0.3);
+    border-radius: var(--radius);
+    font-size: 13px;
+    align-items: center;
+    gap: 12px;
+  }
+  #install-banner.show { display: flex; }
+  #install-banner .ib-text { flex: 1; line-height: 1.4; }
+  #install-banner .ib-title { font-weight: 600; color: var(--accent); font-size: 14px; }
+  #install-btn {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #install-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 0 0 4px;
+  }
+
+  /* ── Empty state ─────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 32px 20px;
+  }
+  .empty-state .es-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state .es-title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .empty-state .es-sub { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+  /* ── Muscle group chip ───────────────────── */
+  .muscle-chip {
+    display: inline-block;
+    padding: 3px 8px;
+    background: var(--bg3);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    margin: 2px 2px 0 0;
+  }
+
+  /* ── Search input ────────────────────────── */
+  .search-wrap {
+    padding: 0 16px 12px;
+    position: relative;
+  }
+  .search-icon {
+    position: absolute;
+    left: 30px;
+    top: 50%;
+    transform: translateY(-55%);
+    color: var(--muted);
+    font-size: 16px;
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px 12px 40px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  /* ── Tabs ────────────────────────────────── */
+  .tab-row {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px 14px;
+    overflow-x: auto;
+  }
+  .tab-row::-webkit-scrollbar { display: none; }
+  .tab-chip {
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tab-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0a0a0f;
+  }
+
+  /* ── Streak indicator ────────────────────── */
+  .streak-dots {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .streak-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .streak-dot.filled { background: var(--success); }
+  .streak-dot.target { background: var(--accent); }
+
+  /* ── Divider ─────────────────────────────── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 16px 12px;
+  }
+
+  @media (prefers-color-scheme: light) {
+    /* keep dark — this is a fitness app */
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ HOME VIEW ══════════════════════════ -->
+  <div class="view active" id="view-home">
+    <div class="page-header">
+      <div id="install-banner">
+        <div class="ib-text">
+          <div class="ib-title">Add to Home Screen</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:2px">Install for offline access</div>
+        </div>
+        <button id="install-btn">Install</button>
+        <button id="install-close">×</button>
+      </div>
+      <div class="page-title" style="margin-top:12px">GOOD<br><span>LIFT</span></div>
+      <div class="page-sub" id="home-date"></div>
+    </div>
+
+    <div class="stat-grid" id="home-stats">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Total Sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-ready" style="color:var(--success)">0</div>
+        <div class="stat-label">Ready to Increase</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-streak" style="color:var(--accent2)">0</div>
+        <div class="stat-label">Week Streak</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-exercises" style="color:var(--blue)">0</div>
+        <div class="stat-label">Exercises Logged</div>
+      </div>
+    </div>
+
+    <div class="section-title">EXERCISES NEEDING ATTENTION</div>
+    <div id="home-attention"></div>
+
+    <div class="section-title" style="margin-top:4px">RECENT ACTIVITY</div>
+    <div id="home-recent"></div>
+  </div>
+
+  <!-- ══ LOG VIEW ═══════════════════════════ -->
+  <div class="view" id="view-log">
+    <div class="page-header">
+      <div class="page-title">LOG<br><span>SET</span></div>
+      <div class="page-sub">Record your workout</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Exercise</label>
+      <div class="select-wrap">
+        <select class="form-input" id="log-exercise" onchange="onExerciseChange()">
+          <option value="">Select exercise…</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="log-advice" class="advice-banner"></div>
+
+    <div class="num-row">
+      <div class="num-group">
+        <label>Weight (kg)</label>
+        <div class="num-control">
+          <button class="num-btn" onclick="nudge('weight', -0.5)">−</button>
+          <input class="num-val" id="val-weight" type="number" step="0.5" min="0" value="10" inputmode="decimal">
+          <button class="num-btn" onclick="nudge('weight', 0.5)">+</button>
+        </div>
+      </div>
+      <div class="num-group">
+        <label>Sets</label>
+        <div class="num-control">
+          <button class="num-btn" onclick="nudge('sets', -1)">−</button>
+          <input class="num-val" id="val-sets" type="number" step="1" min="1" value="3" inputmode="numeric">
+          <button class="num-btn" onclick="nudge('sets', 1)">+</button>
+        </div>
+      </div>
+      <div class="num-group">
+        <label>Reps</label>
+        <div class="num-control">
+          <button class="num-btn" onclick="nudge('reps', -1)">−</button>
+          <input class="num-val" id="val-reps" type="number" step="1" min="1" value="12" inputmode="numeric">
+          <button class="num-btn" onclick="nudge('reps', 1)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Hit Top of Rep Range? <span id="rep-range-hint" style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0"></span></label>
+      <div class="toggle-row" style="padding:0">
+        <button class="toggle-btn" id="btn-yes" onclick="setHitTop(true)">✓ YES</button>
+        <button class="toggle-btn" id="btn-no"  onclick="setHitTop(false)">✗ NO</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes (optional)</label>
+      <input class="form-input" id="log-notes" type="text" placeholder="How did it feel?" maxlength="120">
+    </div>
+
+    <button class="btn-primary" onclick="saveSet()">SAVE WORKOUT</button>
+  </div>
+
+  <!-- ══ HISTORY VIEW ═══════════════════════ -->
+  <div class="view" id="view-history">
+    <div class="page-header">
+      <div class="page-title">WORK<br><span>HISTORY</span></div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" id="hist-search" placeholder="Search exercise…" oninput="renderHistory()">
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- ══ PROGRESS VIEW ══════════════════════ -->
+  <div class="view" id="view-progress">
+    <div class="page-header">
+      <div class="page-title">YOUR<br><span>PROGRESS</span></div>
+    </div>
+    <div class="tab-row" id="prog-tabs"></div>
+    <div class="search-wrap" style="padding-bottom:0">
+      <span class="search-icon">⌕</span>
+      <input class="search-input" id="prog-search" placeholder="Search exercise…" oninput="renderProgress()">
+    </div>
+    <div style="height:12px"></div>
+    <div id="progress-list"></div>
+  </div>
+
+  <!-- ══ NAV ════════════════════════════════ -->
+  <nav id="nav">
+    <button class="nav-btn active" onclick="switchView('home')" id="nav-home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      Home
+    </button>
+    <button class="nav-btn" onclick="switchView('log')" id="nav-log">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Log
+    </button>
+    <button class="nav-btn" onclick="switchView('history')" id="nav-history">
+      <div class="pip" id="pip-history"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+      History
+    </button>
+    <button class="nav-btn" onclick="switchView('progress')" id="nav-progress">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Progress
+    </button>
+  </nav>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Modal -->
+<div id="modal-overlay" onclick="closeModal()">
+  <div id="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// EXERCISE DATABASE
+// ═══════════════════════════════════════════
+const EXERCISES = [
+  {"name":"Dumbbell Chest Press","muscles":"Chest, Triceps, Front Delt","beginner":4.5,"intermediate":9,"advanced":16,"repRange":"8–12","increment":2.5,"notes":"Keep elbows ~45° from torso","weightType":"per DB"},
+  {"name":"Dumbbell Shoulder Press","muscles":"Deltoids, Triceps","beginner":3.5,"intermediate":7,"advanced":11.5,"repRange":"8–12","increment":2.5,"notes":"Don't lock elbows at top","weightType":"per DB"},
+  {"name":"Lateral Raise","muscles":"Side Deltoids","beginner":2.5,"intermediate":4.5,"advanced":8,"repRange":"12–15","increment":1,"notes":"Slight bend in elbow, control descent","weightType":"per DB"},
+  {"name":"Front Raise","muscles":"Front Deltoids","beginner":2.5,"intermediate":4.5,"advanced":7,"repRange":"12–15","increment":1,"notes":"Don't swing; use slow tempo","weightType":"per DB"},
+  {"name":"Tricep Kickback","muscles":"Triceps","beginner":2.5,"intermediate":4.5,"advanced":7,"repRange":"10–15","increment":1,"notes":"Upper arm stays parallel to floor","weightType":"per DB"},
+  {"name":"Overhead Tricep Extension","muscles":"Triceps","beginner":3.5,"intermediate":7,"advanced":10,"repRange":"10–15","increment":1,"notes":"Keep elbows close to head","weightType":"total"},
+  {"name":"Push-Up (weighted vest)","muscles":"Chest, Triceps, Core","beginner":0,"intermediate":4.5,"advanced":11.5,"repRange":"8–15","increment":2.5,"notes":"Add vest weight as bodyweight becomes easy","weightType":"total"},
+  {"name":"Dumbbell Row","muscles":"Lats, Biceps, Rear Delt","beginner":7,"intermediate":11.5,"advanced":18,"repRange":"8–12","increment":2.5,"notes":"Brace core; pull elbow to hip","weightType":"per DB"},
+  {"name":"Bent-Over Row","muscles":"Lats, Rhomboids, Biceps","beginner":7,"intermediate":13.5,"advanced":22.5,"repRange":"8–12","increment":2.5,"notes":"Hinge at hips; neutral spine","weightType":"per DB"},
+  {"name":"Bicep Curl","muscles":"Biceps","beginner":3.5,"intermediate":7,"advanced":10,"repRange":"10–15","increment":1,"notes":"No swinging; full range of motion","weightType":"per DB"},
+  {"name":"Hammer Curl","muscles":"Biceps, Brachialis","beginner":3.5,"intermediate":7,"advanced":10,"repRange":"10–15","increment":1,"notes":"Neutral wrist throughout","weightType":"per DB"},
+  {"name":"Rear Delt Fly","muscles":"Rear Deltoids, Rhomboids","beginner":2.5,"intermediate":4.5,"advanced":7,"repRange":"12–15","increment":1,"notes":"Slight bend in elbow; squeeze at top","weightType":"per DB"},
+  {"name":"Weighted Crunch","muscles":"Rectus Abdominis","beginner":2.5,"intermediate":4.5,"advanced":11.5,"repRange":"15–20","increment":2.5,"notes":"Hold plate at chest; don't pull neck","weightType":"total"},
+  {"name":"Russian Twist","muscles":"Obliques","beginner":2.5,"intermediate":4.5,"advanced":9,"repRange":"15–20","increment":2.5,"notes":"Per side; keep feet off floor for harder","weightType":"total"},
+  {"name":"Pallof Press","muscles":"Deep Core, Anti-Rotation","beginner":2.5,"intermediate":4.5,"advanced":9,"repRange":"12–15","increment":2.5,"notes":"Hold 2 sec at extension","weightType":"total"},
+  {"name":"Dead Bug (weighted)","muscles":"Deep Core, TVA","beginner":1,"intermediate":2.5,"advanced":4.5,"repRange":"10–12","increment":1,"notes":"Lower slowly; don't lose lower-back contact","weightType":"per DB"},
+  {"name":"Weighted Plank","muscles":"Full Core, Shoulders","beginner":2.5,"intermediate":4.5,"advanced":11.5,"repRange":"Hold 30–60s","increment":2.5,"notes":"Add plate to lower back; keep hips level","weightType":"total"},
+  {"name":"Goblet Squat","muscles":"Quads, Glutes, Core","beginner":7,"intermediate":13.5,"advanced":22.5,"repRange":"10–15","increment":2.5,"notes":"Hold 1 dumbbell at chest; heels flat","weightType":"total"},
+  {"name":"Dumbbell Lunge","muscles":"Quads, Glutes, Hamstrings","beginner":4.5,"intermediate":9,"advanced":16,"repRange":"10–12","increment":2.5,"notes":"Per leg; keep front knee over ankle","weightType":"per DB"},
+  {"name":"Romanian Deadlift (RDL)","muscles":"Hamstrings, Glutes, Back","beginner":7,"intermediate":13.5,"advanced":25,"repRange":"8–12","increment":2.5,"notes":"Hinge at hips; soft knees; feel hamstring stretch","weightType":"per DB"},
+  {"name":"Bulgarian Split Squat","muscles":"Quads, Glutes","beginner":4.5,"intermediate":9,"advanced":16,"repRange":"8–12","increment":2.5,"notes":"Per leg; rear foot elevated","weightType":"per DB"},
+  {"name":"Step-Up (w/ dumbbells)","muscles":"Quads, Glutes","beginner":4.5,"intermediate":9,"advanced":16,"repRange":"10–12","increment":2.5,"notes":"Drive through heel; full hip extension","weightType":"per DB"},
+  {"name":"Glute Bridge (weighted)","muscles":"Glutes, Hamstrings","beginner":9,"intermediate":20.5,"advanced":32,"repRange":"12–15","increment":4.5,"notes":"Plate on hips; squeeze at top","weightType":"total"},
+  {"name":"Calf Raise (weighted)","muscles":"Gastrocnemius, Soleus","beginner":7,"intermediate":13.5,"advanced":22.5,"repRange":"15–20","increment":2.5,"notes":"Full range; pause at top and bottom","weightType":"total"},
+  {"name":"Sumo Squat","muscles":"Inner Thighs, Glutes","beginner":9,"intermediate":16,"advanced":25,"repRange":"10–15","increment":2.5,"notes":"Wide stance, toes out ~45°","weightType":"total"},
+  {"name":"Dumbbell Deadlift","muscles":"Full Posterior Chain","beginner":9,"intermediate":18,"advanced":29.5,"repRange":"6–10","increment":4.5,"notes":"Brace core; push floor away on ascent","weightType":"per DB"},
+  {"name":"Thrusters","muscles":"Quads, Shoulders, Core","beginner":4.5,"intermediate":9,"advanced":16,"repRange":"8–12","increment":2.5,"notes":"Squat-to-press; explosive drive","weightType":"per DB"},
+  {"name":"Renegade Row","muscles":"Back, Core, Shoulders","beginner":4.5,"intermediate":9,"advanced":13.5,"repRange":"8–10","increment":2.5,"notes":"Per side; hips square to floor","weightType":"per DB"},
+  {"name":"Dumbbell Clean & Press","muscles":"Full Body, Power","beginner":4.5,"intermediate":9,"advanced":16,"repRange":"6–10","increment":2.5,"notes":"Hip drive into press; control descent","weightType":"per DB"},
+  {"name":"Farmer's Carry","muscles":"Grip, Traps, Core, Legs","beginner":9,"intermediate":18,"advanced":27,"repRange":"30–60m carry","increment":5,"notes":"Per hand; stand tall; don't lean","weightType":"per DB"},
+  {"name":"Suitcase Carry","muscles":"Core (Anti-Lateral Flexion)","beginner":7,"intermediate":13.5,"advanced":22.5,"repRange":"30–60m carry","increment":5,"notes":"One-sided; resist lateral lean","weightType":"total"}
+];
+
+const MUSCLE_GROUPS = ["All", "Push", "Pull", "Core", "Legs", "Full Body"];
+const MUSCLE_MAP = {
+  "Push":      ["Chest","Triceps","Deltoids","Front Delt","Side Deltoids","Front Deltoids","Shoulders"],
+  "Pull":      ["Lats","Biceps","Rear Delt","Rhomboids","Rear Deltoids","Back"],
+  "Core":      ["Core","Obliques","Abdominis","TVA","Anti-Rotation"],
+  "Legs":      ["Quads","Glutes","Hamstrings","Gastrocnemius","Soleus","Thighs","Posterior"],
+  "Full Body": ["Full Body","Power","Full Posterior","Grip","Traps"]
+};
+
+const ICONS = {
+  "Push": "🏋️", "Pull": "💪", "Core": "🎯", "Legs": "🦵", "Full Body": "⚡", "default": "🔵"
+};
+
+function getMuscleGroup(ex) {
+  for (const [grp, keywords] of Object.entries(MUSCLE_MAP)) {
+    if (keywords.some(k => ex.muscles.includes(k))) return grp;
+  }
+  return "Full Body";
+}
+
+function getIcon(ex) {
+  return ICONS[getMuscleGroup(ex)] || ICONS.default;
+}
+
+// ═══════════════════════════════════════════
+// DATA LAYER
+// ═══════════════════════════════════════════
+function loadLog() {
+  try { return JSON.parse(localStorage.getItem('liftLog') || '[]'); } catch { return []; }
+}
+function saveLog(log) {
+  localStorage.setItem('liftLog', JSON.stringify(log));
+}
+
+function getExerciseStats(name) {
+  const log = loadLog().filter(e => e.exercise === name);
+  if (!log.length) return null;
+
+  const sorted = [...log].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const latest = sorted[sorted.length - 1];
+  const pb = Math.max(...log.map(e => e.weight));
+  const pbEntry = log.find(e => e.weight === pb);
+  const total = log.length;
+
+  // Consecutive YES streak (working backwards from latest)
+  let streak = 0;
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (sorted[i].hitTop) streak++;
+    else break;
+  }
+
+  const ex = EXERCISES.find(e => e.name === name);
+  const inc = ex ? ex.increment : 2.5;
+  const nextWeight = parseFloat((latest.weight + inc).toFixed(2));
+
+  let status = 'new';
+  if (total > 0) {
+    if (streak >= 2) status = 'increase';
+    else if (streak === 1) status = 'almost';
+    else status = 'maintain';
+  }
+
+  return { latest, pb, pbDate: pbEntry?.date, total, streak, nextWeight, status, log: sorted };
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+let currentView = 'home';
+function switchView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.getElementById('nav-' + view).classList.add('active');
+  currentView = view;
+  if (view === 'home')     renderHome();
+  if (view === 'history')  renderHistory();
+  if (view === 'progress') renderProgress();
+  if (view === 'log')      renderLogView();
+}
+
+// ═══════════════════════════════════════════
+// HOME VIEW
+// ═══════════════════════════════════════════
+function renderHome() {
+  const log = loadLog();
+  const now = new Date();
+  document.getElementById('home-date').textContent = now.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
+
+  // Stats
+  const uniqueEx = new Set(log.map(e => e.exercise)).size;
+  const readyCount = EXERCISES.filter(ex => {
+    const s = getExerciseStats(ex.name);
+    return s && s.status === 'increase';
+  }).length;
+
+  // Week streak: how many consecutive weeks have had at least 1 session
+  let weekStreak = 0;
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  let checkDate = new Date(now);
+  checkDate.setHours(0,0,0,0);
+  // go back by week
+  for (let w = 0; w < 52; w++) {
+    const weekStart = new Date(checkDate - w * weekMs);
+    const weekEnd   = new Date(weekStart.getTime() + weekMs);
+    const hasSession = log.some(e => {
+      const d = new Date(e.date);
+      return d >= weekStart && d < weekEnd;
+    });
+    if (hasSession) weekStreak++;
+    else if (w > 0) break; // allow current week to be incomplete
+  }
+
+  document.getElementById('stat-total').textContent = log.length;
+  document.getElementById('stat-ready').textContent = readyCount;
+  document.getElementById('stat-streak').textContent = weekStreak;
+  document.getElementById('stat-exercises').textContent = uniqueEx;
+
+  // Attention: exercises ready to increase or with recent activity
+  const attn = document.getElementById('home-attention');
+  const attentionEx = EXERCISES.filter(ex => {
+    const s = getExerciseStats(ex.name);
+    return s && (s.status === 'increase' || s.status === 'almost');
+  }).slice(0, 5);
+
+  if (attentionEx.length === 0) {
+    attn.innerHTML = `<div style="padding:8px 16px 16px;color:var(--muted);font-size:13px">
+      ${log.length === 0 ? 'Log your first workout to see recommendations here.' : 'Keep training — recommendations will appear as you build streaks.'}
+    </div>`;
+  } else {
+    attn.innerHTML = attentionEx.map(ex => buildExRow(ex)).join('');
+  }
+
+  // Recent: last 5 log entries
+  const recent = document.getElementById('home-recent');
+  const last5 = [...log].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  if (last5.length === 0) {
+    recent.innerHTML = `<div style="padding:8px 16px 24px;color:var(--muted);font-size:13px">No workouts yet.</div>`;
+  } else {
+    recent.innerHTML = last5.map(e => `
+      <div class="hist-item">
+        <div class="hist-dot ${e.hitTop ? 'success' : ''}"></div>
+        <div class="hist-info">
+          <div class="hist-name">${e.exercise}</div>
+          <div class="hist-detail">${e.sets}×${e.reps} · ${formatDate(e.date)} ${e.notes ? '· ' + e.notes : ''}</div>
+        </div>
+        <div class="hist-weight">${e.weight}kg</div>
+      </div>`).join('');
+  }
+}
+
+function buildExRow(ex) {
+  const s = getExerciseStats(ex.name);
+  const icon = getIcon(ex);
+  let badge = '';
+  let cls = '';
+  if (!s) {
+    badge = `<span class="ex-badge badge-new">NEW</span>`;
+  } else if (s.status === 'increase') {
+    badge = `<span class="ex-badge badge-increase">↑ INCREASE</span>`;
+    cls = 'has-increase';
+  } else if (s.status === 'almost') {
+    badge = `<span class="ex-badge badge-almost">ALMOST</span>`;
+    cls = 'has-almost';
+  } else {
+    badge = `<span class="ex-badge badge-maintain">MAINTAIN</span>`;
+  }
+
+  const weight = s ? `${s.latest.weight}kg` : `from ${ex.beginner}kg`;
+  return `<div class="ex-row ${cls}" onclick="showExModal('${ex.name.replace(/'/g,"\\'")}')">
+    <div class="ex-icon">${icon}</div>
+    <div class="ex-info">
+      <div class="ex-name">${ex.name}</div>
+      <div class="ex-meta">${ex.muscles} · ${weight}${ex.weightType === 'per DB' ? ' per DB' : ' total'}</div>
+    </div>
+    ${badge}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// LOG VIEW
+// ═══════════════════════════════════════════
+let hitTop = null;
+
+function renderLogView() {
+  const sel = document.getElementById('log-exercise');
+  if (sel.options.length <= 1) {
+    EXERCISES.forEach(ex => {
+      const opt = document.createElement('option');
+      opt.value = ex.name;
+      opt.textContent = ex.name;
+      sel.appendChild(opt);
+    });
+  }
+  hitTop = null;
+  document.getElementById('btn-yes').className = 'toggle-btn';
+  document.getElementById('btn-no').className  = 'toggle-btn';
+  document.getElementById('log-advice').className = 'advice-banner';
+  document.getElementById('log-notes').value = '';
+}
+
+function onExerciseChange() {
+  const name = document.getElementById('log-exercise').value;
+  if (!name) {
+    document.getElementById('log-advice').className = 'advice-banner';
+    document.getElementById('rep-range-hint').textContent = '';
+    return;
+  }
+  const ex = EXERCISES.find(e => e.name === name);
+  const s  = getExerciseStats(name);
+
+  // Set sensible default weight
+  if (s) {
+    document.getElementById('val-weight').value = s.latest.weight;
+  } else if (ex) {
+    document.getElementById('val-weight').value = ex.beginner || ex.intermediate || 5;
+  }
+
+  // Rep range hint
+  if (ex) document.getElementById('rep-range-hint').textContent = `(target: ${ex.repRange})`;
+
+  // Advice banner
+  const banner = document.getElementById('log-advice');
+  if (!s) {
+    banner.className = 'advice-banner maintain show';
+    banner.innerHTML = `<strong>🆕 First time!</strong>Start at ${ex.beginner || ex.intermediate}kg · Target: ${ex.repRange} · ${ex.weightType === 'per DB' ? 'Weight is per dumbbell' : 'Weight is total (one dumbbell)'} · <em>${ex.notes}</em>`;
+  } else if (s.status === 'increase') {
+    banner.className = 'advice-banner increase show';
+    banner.innerHTML = `<strong>✅ Time to increase!</strong>You've hit ${s.streak} sessions at the top of your range. Increase to <strong>${s.nextWeight}kg</strong> today!`;
+  } else if (s.status === 'almost') {
+    banner.className = 'advice-banner almost show';
+    banner.innerHTML = `<strong>⬆️ Almost there!</strong>1 session at top of range. Repeat ${s.latest.weight}kg and aim for all reps at ${ex.repRange}.`;
+  } else {
+    banner.className = 'advice-banner maintain show';
+    banner.innerHTML = `<strong>🔄 Keep building.</strong>Stay at ${s.latest.weight}kg and build to ${ex.repRange} reps before increasing. ${ex.notes}`;
+  }
+}
+
+function setHitTop(val) {
+  hitTop = val;
+  document.getElementById('btn-yes').className = val ? 'toggle-btn selected-yes' : 'toggle-btn';
+  document.getElementById('btn-no').className  = !val ? 'toggle-btn selected-no' : 'toggle-btn';
+}
+
+function nudge(field, delta) {
+  const el = document.getElementById('val-' + field);
+  const v = parseFloat(el.value) || 0;
+  el.value = Math.max(0, parseFloat((v + delta).toFixed(2)));
+}
+
+function saveSet() {
+  const name = document.getElementById('log-exercise').value;
+  if (!name) { toast('Select an exercise first'); return; }
+  if (hitTop === null) { toast('Did you hit the top of your rep range?'); return; }
+
+  const entry = {
+    id:       Date.now(),
+    date:     new Date().toISOString(),
+    exercise: name,
+    weight:   parseFloat(document.getElementById('val-weight').value) || 0,
+    sets:     parseInt(document.getElementById('val-sets').value) || 1,
+    reps:     parseInt(document.getElementById('val-reps').value) || 1,
+    hitTop:   hitTop,
+    notes:    document.getElementById('log-notes').value.trim()
+  };
+
+  const log = loadLog();
+  log.push(entry);
+  saveLog(log);
+
+  const s = getExerciseStats(name);
+  if (s && s.status === 'increase') {
+    toast('💪 Time to level up! Increase weight next session');
+  } else if (s && s.status === 'almost') {
+    toast('⬆️ Almost there — one more session!');
+  } else {
+    toast('✓ Saved!');
+  }
+
+  // Reset form
+  hitTop = null;
+  document.getElementById('log-exercise').value = '';
+  document.getElementById('btn-yes').className = 'toggle-btn';
+  document.getElementById('btn-no').className  = 'toggle-btn';
+  document.getElementById('log-advice').className = 'advice-banner';
+  document.getElementById('log-notes').value = '';
+  document.getElementById('rep-range-hint').textContent = '';
+
+  setTimeout(() => switchView('home'), 600);
+}
+
+// ═══════════════════════════════════════════
+// HISTORY VIEW
+// ═══════════════════════════════════════════
+function renderHistory() {
+  const q = (document.getElementById('hist-search')?.value || '').toLowerCase();
+  const log = loadLog()
+    .filter(e => !q || e.exercise.toLowerCase().includes(q))
+    .sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  const list = document.getElementById('history-list');
+  if (log.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="es-icon">📋</div>
+      <div class="es-title">NO LOGS YET</div>
+      <div class="es-sub">Your workout history will appear here once you start logging sessions.</div>
+    </div>`;
+    return;
+  }
+
+  // Group by date
+  const groups = {};
+  log.forEach(e => {
+    const day = new Date(e.date).toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'short', year:'numeric'});
+    if (!groups[day]) groups[day] = [];
+    groups[day].push(e);
+  });
+
+  list.innerHTML = Object.entries(groups).map(([day, entries]) => `
+    <div class="hist-day">${day}</div>
+    ${entries.map(e => `
+      <div class="hist-item">
+        <div class="hist-dot ${e.hitTop ? 'success' : ''}"></div>
+        <div class="hist-info">
+          <div class="hist-name">${e.exercise}</div>
+          <div class="hist-detail">${e.sets} sets × ${e.reps} reps${e.notes ? ' · ' + e.notes : ''} · ${e.hitTop ? '✓ Hit target' : '✗ Below target'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="hist-weight">${e.weight}kg</div>
+          <button class="hist-delete" onclick="deleteEntry(${e.id})">×</button>
+        </div>
+      </div>`).join('')}
+  `).join('');
+}
+
+function deleteEntry(id) {
+  const log = loadLog().filter(e => e.id !== id);
+  saveLog(log);
+  renderHistory();
+  toast('Entry removed');
+}
+
+// ═══════════════════════════════════════════
+// PROGRESS VIEW
+// ═══════════════════════════════════════════
+let progTab = 'All';
+let expandedEx = null;
+
+function renderProgress() {
+  // Build tabs
+  const tabRow = document.getElementById('prog-tabs');
+  tabRow.innerHTML = MUSCLE_GROUPS.map(g => `
+    <div class="tab-chip ${g === progTab ? 'active' : ''}" onclick="setProgTab('${g}')">${g}</div>
+  `).join('');
+
+  const q = (document.getElementById('prog-search')?.value || '').toLowerCase();
+  const log = loadLog();
+  const loggedNames = new Set(log.map(e => e.exercise));
+
+  let exList = EXERCISES.filter(ex => {
+    if (q && !ex.name.toLowerCase().includes(q)) return false;
+    if (progTab === 'All') return true;
+    return getMuscleGroup(ex) === progTab;
+  });
+
+  // Sort: increase first, then almost, then logged, then new
+  const order = { increase: 0, almost: 1, maintain: 2, new: 3 };
+  exList.sort((a, b) => {
+    const sa = getExerciseStats(a.name);
+    const sb = getExerciseStats(b.name);
+    const oa = sa ? order[sa.status] : 3;
+    const ob = sb ? order[sb.status] : 3;
+    if (oa !== ob) return oa - ob;
+    return a.name.localeCompare(b.name);
+  });
+
+  const list = document.getElementById('progress-list');
+  if (exList.length === 0) {
+    list.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No exercises found.</div>`;
+    return;
+  }
+
+  list.innerHTML = exList.map(ex => {
+    const s = getExerciseStats(ex.name);
+    const isExpanded = expandedEx === ex.name;
+    const icon = getIcon(ex);
+
+    let statusHtml = '', detailHtml = '', rightHtml = '';
+
+    if (!s) {
+      rightHtml = `<div style="text-align:right">
+        <div class="prog-weight" style="color:var(--muted);font-size:14px">${ex.beginner}kg</div>
+        <div class="prog-streak" style="font-size:10px">suggested start</div>
+      </div>`;
+    } else {
+      const streakDots = [0,1].map(i => `<div class="streak-dot ${i < s.streak ? 'filled' : ''}"></div>`).join('');
+      rightHtml = `<div style="text-align:right">
+        <div class="prog-weight">${s.latest.weight}kg</div>
+        <div class="streak-dots" style="justify-content:flex-end">${streakDots}<div class="streak-dot target"></div></div>
+      </div>`;
+
+      if (s.status === 'increase') {
+        statusHtml = `<div class="prog-status-pill badge-increase">✅ INCREASE → ${s.nextWeight}kg</div>`;
+      } else if (s.status === 'almost') {
+        statusHtml = `<div class="prog-status-pill badge-almost">⬆️ One more session at ${s.latest.weight}kg</div>`;
+      } else {
+        statusHtml = `<div class="prog-status-pill badge-maintain">🔄 Keep building to ${ex.repRange}</div>`;
+      }
+
+      // Mini chart: last 8 sessions
+      const last8 = s.log.slice(-8);
+      const maxW = Math.max(...last8.map(e => e.weight));
+      const chartBars = last8.map((e, i) => {
+        const pct = maxW > 0 ? Math.round((e.weight / maxW) * 100) : 50;
+        const isCurrent = i === last8.length - 1;
+        return `<div class="mini-bar ${isCurrent ? 'current' : ''}" style="height:${Math.max(pct, 8)}%"></div>`;
+      }).join('');
+
+      detailHtml = `
+        <div class="prog-stat-row">
+          <div class="prog-stat">
+            <div class="prog-stat-val">${s.pb}kg</div>
+            <div class="prog-stat-lbl">All-time PB</div>
+          </div>
+          <div class="prog-stat">
+            <div class="prog-stat-val">${s.total}</div>
+            <div class="prog-stat-lbl">Sessions logged</div>
+          </div>
+          <div class="prog-stat">
+            <div class="prog-stat-val">${s.streak}</div>
+            <div class="prog-stat-lbl">Current streak</div>
+          </div>
+          <div class="prog-stat">
+            <div class="prog-stat-val">${s.nextWeight}kg</div>
+            <div class="prog-stat-lbl">Next target</div>
+          </div>
+        </div>
+        <div class="mini-chart" style="margin-bottom:16px">${chartBars}</div>
+        ${statusHtml}
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.5">${ex.notes}<br>
+          <span style="color:var(--muted);font-size:11px">${ex.weightType === 'per DB' ? '🏋️ Weight is per dumbbell' : '🏋️ Weight is total (one dumbbell)'} · Rep target: ${ex.repRange}</span>
+        </div>
+      `;
+    }
+
+    return `<div class="prog-ex-card ${isExpanded ? 'expanded' : ''}" id="prog-card-${ex.name.replace(/[^a-z0-9]/gi,'-')}" onclick="toggleProgCard('${ex.name.replace(/'/g,"\\'")}')">
+      <div class="prog-ex-header">
+        <div class="ex-icon">${icon}</div>
+        <div class="prog-ex-info">
+          <div class="prog-ex-name">${ex.name}</div>
+          <div class="prog-ex-meta">${ex.muscles}</div>
+        </div>
+        ${rightHtml}
+      </div>
+      ${isExpanded ? `<div class="prog-detail">${detailHtml || `<div style="color:var(--muted);font-size:13px;padding-top:8px">No sessions logged yet. Start weight: <strong>${ex.beginner}kg</strong> · ${ex.notes}</div>`}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function setProgTab(tab) {
+  progTab = tab;
+  renderProgress();
+}
+
+function toggleProgCard(name) {
+  expandedEx = expandedEx === name ? null : name;
+  renderProgress();
+}
+
+// ═══════════════════════════════════════════
+// EXERCISE MODAL
+// ═══════════════════════════════════════════
+function showExModal(name) {
+  const ex = EXERCISES.find(e => e.name === name);
+  const s  = getExerciseStats(name);
+  if (!ex) return;
+
+  let html = `
+    <div class="modal-title">${name}</div>
+    <div class="modal-sub">${ex.muscles}</div>
+    <div class="modal-row">
+      <span class="modal-row-label">Current weight</span>
+      <span class="modal-row-val">${s ? s.latest.weight + 'kg' : '—'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Suggested next</span>
+      <span class="modal-row-val" style="color:var(--success)">${s ? s.nextWeight + 'kg' : ex.beginner + 'kg (start)'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Rep range</span>
+      <span class="modal-row-val">${ex.repRange}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Increment</span>
+      <span class="modal-row-val">${ex.increment}kg</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Weight type</span>
+      <span class="modal-row-val">${ex.weightType === 'per DB' ? 'Per dumbbell' : 'Total'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">Streak</span>
+      <span class="modal-row-val">${s ? s.streak + ' / 2 needed' : '0'}</span>
+    </div>
+    <div class="modal-row">
+      <span class="modal-row-label">All-time PB</span>
+      <span class="modal-row-val">${s ? s.pb + 'kg' : '—'}</span>
+    </div>
+    <div style="margin-top:12px;padding:12px;background:var(--bg3);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.6">${ex.notes}</div>
+    <button class="btn-primary" style="margin-top:16px" onclick="closeModal();switchView('log');setTimeout(()=>{document.getElementById('log-exercise').value='${name.replace(/'/g,"\\'")}';onExerciseChange();},50)">LOG THIS EXERCISE</button>
+  `;
+
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════
+// PWA INSTALL
+// ═══════════════════════════════════════════
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('install-banner');
+  if (!localStorage.getItem('installDismissed')) banner.classList.add('show');
+});
+
+document.getElementById('install-btn').onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').classList.remove('show');
+};
+
+document.getElementById('install-close').onclick = () => {
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('installDismissed', '1');
+};
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+renderHome();
+</script>
+</body>
+</html>
